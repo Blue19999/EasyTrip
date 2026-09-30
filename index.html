@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f5f7">
+  <title>EasyTrip · 自由定制每一程</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script defer src="./export.js"></script>
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./index.html" aria-label="EasyTrip 首页"><span class="brandmark" aria-hidden="true">✳</span>EasyTrip</a>
+    <span class="topbar-caption">把想去的地方，变成你的路线。</span>
+    <span class="local-badge">●&nbsp; 自动保存至此浏览器</span>
+  </header>
+
+  <main class="shell">
+    <section class="hero" aria-label="当前行程">
+      <div class="hero-copy">
+        <div class="eyebrow">YOUR NEXT JOURNEY</div>
+        <h1 id="tripTitle">京都慢游 · 秋日散步</h1>
+        <p id="tripMeta">为每一天安排喜欢的地点，路线会跟着更新。</p>
+      </div>
+      <div class="hero-actions"><button class="button subtle" id="editProject" type="button">编辑当前行程</button><button class="button subtle" id="exportProject" type="button">导出行程</button><button class="button subtle" id="manageProjects" type="button">管理行程</button><button class="button primary" id="newProject" type="button">＋ 新建行程</button></div>
+    </section>
+
+    <section class="project-strip" id="projectStrip" aria-label="行程项目"></section>
+    <section class="empty-project" id="emptyProject" hidden><span class="eyebrow">YOUR NEXT JOURNEY</span><h2>还没有行程计划</h2><p>创建一段新旅程，再按天加入想去的地点。</p><button class="button primary" id="emptyNewProject" type="button">＋ 新建行程</button></section>
+
+    <div class="workspace">
+      <section class="panel itinerary" aria-label="每日行程">
+        <div class="panel-head"><div><span class="eyebrow">ITINERARY</span><h2>每日行程</h2><p>按顺序安排行程，随时调整计划。</p></div><button class="text-button" id="manageDays" type="button">管理日期</button></div>
+        <div class="days" id="days" role="tablist" aria-label="旅行日期"></div>
+        <div class="section-label"><span>地点标签</span><button class="text-button" id="manageTags" type="button">管理标签</button></div>
+        <div class="filters" id="filters" aria-label="筛选地点标签"></div>
+        <div class="route-summary" id="routeSummary" role="status" aria-live="polite"><span class="route-symbol">↗</span><div><strong>正在准备路线</strong><small>路线按当天所有地点的顺序计算</small></div></div>
+        <div class="timeline" id="timeline"></div>
+        <div class="sidebar-foot"><span id="dayCount"></span><button class="text-button" id="resetTrip" type="button">恢复京都示例</button></div>
+      </section>
+
+      <section class="panel map-panel" aria-label="行程地图">
+        <div id="map" class="map" role="application" aria-label="旅行地图"></div>
+        <div class="map-title"><span class="map-title-icon">⌖</span><span><strong>行程地图</strong><small id="mapSubtitle">京都 · 第 1 天</small></span></div>
+        <div class="map-search search-wrap" id="searchWrap">
+          <label class="sr-only" for="placeSearch">搜索地点并加入行程</label>
+          <div class="search-input-row"><span class="search-icon" aria-hidden="true">⌕</span><input id="placeSearch" type="search" autocomplete="off" placeholder="搜索地点…" aria-controls="searchResults" aria-expanded="false"><kbd>↵</kbd></div>
+          <div class="search-results" id="searchResults" role="listbox" hidden></div>
+        </div>
+        <div class="map-hint">点击地图上的地点，加入当天行程</div>
+        <div class="map-tag-island" id="mapTagIsland" aria-label="地图地点标签"><div class="map-legend" id="mapLegend"></div><button class="map-tag-trigger" id="mapTagTrigger" type="button" aria-expanded="false" aria-pressed="false" hidden><span id="mapTagLabel">+2</span></button><div class="map-legend-extra" id="mapLegendExtra" aria-hidden="true"></div></div>
+        <div class="map-notice" id="mapNotice" hidden></div>
+      </section>
+    </div>
+    <p class="source-note">地图 © OpenStreetMap contributors · 地点来自 Photon / OpenStreetMap · 路线由 Valhalla 计算。公共演示服务可能暂时不可用。</p>
+  </main>
+
+  <div class="dialog-backdrop" id="placeDialog" hidden>
+    <form class="dialog" id="placeForm">
+      <div class="dialog-head"><span class="eyebrow">PLACE DETAILS</span><button type="button" class="close-button" data-close="placeDialog" aria-label="关闭">×</button></div>
+      <h2 id="placeDialogTitle">加入当天行程</h2><p class="dialog-address" id="chosenAddress"></p>
+      <label class="form-field">地点名称<input id="chosenName" required maxlength="80"></label>
+      <div class="form-grid"><label class="form-field">地点标签<select id="chosenType"></select></label><label class="form-field">到达时间<input type="time" id="chosenTime" required value="14:00"></label></div>
+      <label class="form-field">地点备注<textarea id="chosenNote" maxlength="500" rows="3" placeholder="比如：想看的展览、订位信息、游玩提醒…"></textarea></label>
+      <div class="dialog-actions"><button type="button" class="button subtle" data-close="placeDialog">取消</button><button type="submit" class="button primary" id="placeSubmit">加入行程</button></div>
+    </form>
+  </div>
+
+  <div class="dialog-backdrop" id="projectDialog" hidden>
+    <form class="dialog" id="projectForm">
+      <div class="dialog-head"><span class="eyebrow">JOURNEY DETAILS</span><button type="button" class="close-button" data-close="projectDialog" aria-label="关闭">×</button></div>
+      <h2 id="projectDialogTitle">开启一段新旅程</h2><p class="dialog-address" id="projectDialogHint">每次出游单独管理，随时切换。</p>
+      <label class="form-field">行程名称<input id="projectName" maxlength="80" required placeholder="例如：上海周末探索"></label>
+      <div class="form-grid"><label class="form-field">目的地<input id="projectDestination" maxlength="80" required placeholder="例如：上海"></label><label class="form-field">天数<input id="projectDays" type="number" min="1" max="30" value="3" required></label></div>
+      <label class="form-field">出发日期（可选）<input id="projectStart" type="date"></label>
+      <p class="form-help" id="projectDaysHelp" hidden>减少天数会移除末尾日期及其中的地点；你也可以在“管理日期”中逐天调整。</p>
+      <div class="dialog-actions"><button type="button" class="button subtle" data-close="projectDialog">取消</button><button type="submit" class="button primary" id="projectSubmit">创建行程</button></div>
+    </form>
+  </div>
+
+  <div class="dialog-backdrop" id="projectsDialog" hidden>
+    <div class="dialog manager-dialog" role="dialog" aria-modal="true" aria-labelledby="projectsDialogTitle">
+      <div class="dialog-head"><span class="eyebrow">YOUR JOURNEYS</span><button type="button" class="close-button" data-close="projectsDialog" aria-label="关闭">×</button></div>
+      <h2 id="projectsDialogTitle">管理行程</h2><p class="dialog-address">打开或编辑行程信息，也可以删除不再需要的计划。</p>
+      <div id="projectList" class="manager-list"></div>
+      <div class="dialog-actions"><button type="button" class="button primary" id="projectNewFromList">＋ 新建行程</button></div>
+    </div>
+  </div>
+
+  <div class="dialog-backdrop" id="tagDialog" hidden>
+    <form class="dialog" id="tagForm">
+      <div class="dialog-head"><span class="eyebrow">CUSTOM TAG</span><button type="button" class="close-button" data-close="tagDialog" aria-label="关闭">×</button></div>
+      <h2 id="tagDialogTitle">创建你的标签</h2><p class="dialog-address">图标与颜色会显示在地点卡片和地图上。</p>
+      <label class="form-field">标签名称<input id="tagName" maxlength="12" required placeholder="例如：博物馆"></label>
+      <div class="form-field"><span>选择图标</span><div class="icon-grid" id="iconGrid" role="radiogroup" aria-label="选择标签图标"></div></div>
+      <div class="form-field"><span>选择颜色</span><div class="color-grid" id="colorGrid" role="radiogroup" aria-label="选择标签颜色"></div></div>
+      <div class="dialog-actions"><button type="button" class="button subtle" data-close="tagDialog">取消</button><button type="submit" class="button primary" id="tagSubmit">创建标签</button></div>
+    </form>
+  </div>
+  <div class="dialog-backdrop" id="tagsDialog" hidden>
+    <div class="dialog manager-dialog" role="dialog" aria-modal="true" aria-labelledby="tagsDialogTitle">
+      <div class="dialog-head"><span class="eyebrow">TAG LIBRARY</span><button type="button" class="close-button" data-close="tagsDialog" aria-label="关闭">×</button></div>
+      <h2 id="tagsDialogTitle">管理地点标签</h2><p class="dialog-address">修改名称、图标和颜色，或删除不再使用的标签。</p>
+      <div id="tagList" class="manager-list"></div>
+      <div class="dialog-actions"><button type="button" class="button primary" id="tagNewFromList">＋ 新建标签</button></div>
+    </div>
+  </div>
+  <div class="dialog-backdrop" id="daysDialog" hidden>
+    <div class="dialog manager-dialog" role="dialog" aria-modal="true" aria-labelledby="daysDialogTitle">
+      <div class="dialog-head"><span class="eyebrow">DAY BY DAY</span><button type="button" class="close-button" data-close="daysDialog" aria-label="关闭">×</button></div>
+      <h2 id="daysDialogTitle">管理每日行程</h2><p class="dialog-address">修改日期名称、调整顺序或移除某一天。</p>
+      <div id="dayList" class="manager-list"></div>
+      <div class="dialog-actions"><button type="button" class="button primary" id="dayNewFromList">＋ 增加一天</button></div>
+    </div>
+  </div>
+  <div class="dialog-backdrop" id="exportDialog" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="exportDialogTitle">
+      <div class="dialog-head"><span class="eyebrow">TAKE IT WITH YOU</span><button type="button" class="close-button" data-close="exportDialog" aria-label="关闭">×</button></div>
+      <h2 id="exportDialogTitle">导出当前行程</h2><p class="dialog-address">选择适合分享或随身查看的形式。</p>
+      <div class="export-options" role="radiogroup" aria-label="导出形式"><label class="export-option"><input type="radio" name="exportKind" value="outline" checked><span><strong>行程大纲</strong><small>按天整理地点、标签图标、备注，以及每段交通图标、距离和时间，下载为可打印 HTML 文档。</small></span></label><label class="export-option"><input type="radio" name="exportKind" value="map"><span><strong>行程地图</strong><small>包含整个项目地点范围与路线，下载为可缩放 SVG 图片。</small></span></label></div>
+      <p class="export-note">地图图片保留地点与道路路线，不打包第三方底图瓦片。</p>
+      <div class="dialog-actions"><button type="button" class="button subtle" data-close="exportDialog">取消</button><button type="button" class="button primary" id="downloadExport">生成并下载</button></div>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

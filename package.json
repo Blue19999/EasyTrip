@@ -1,0 +1,14 @@
+{
+  "name": "easytrip",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev:cloudflare": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "latest",
+    "wrangler": "latest"
+  }
+}
