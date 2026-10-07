@@ -2,7 +2,7 @@
 
 EasyTrip 是一个让旅游爱好者自行定制出游计划的网站。用户可以为不同旅程建立行程项目，按天安排地点，在地图上查看实际路线，并用颜色与图标区分地点标签。
 
-在线体验：[EasyTrip](https://easytrip-travel-planner.yangyixuan0224.workers.dev/)
+在线体验：[EasyTrip](https://easytrip.cloud/)
 
 ## 本地预览
 
@@ -23,7 +23,7 @@ npm install
 npm run deploy
 ```
 
-首次部署需要先运行 `npx wrangler login` 登录 Cloudflare。`npm run deploy` 会先将公开页面文件复制到 `dist/`，再使用 `wrangler.jsonc` 发布；Python 本地服务、项目文档和源代码不会作为静态资源上传。部署后可在 Wrangler 输出的 `workers.dev` 地址访问。
+首次部署需要先运行 `npx wrangler login` 登录 Cloudflare。`npm run deploy` 会先将公开页面文件复制到 `dist/`，再使用 `wrangler.jsonc` 发布；Python 本地服务、项目文档和源代码不会作为静态资源上传。部署后可在已绑定的自定义域名访问；未绑定域名时，也可使用 Wrangler 输出的 `workers.dev` 地址。
 
 本地预览 Cloudflare 版本可运行 `npm run dev:cloudflare`。网站数据仍保存在浏览器的 `localStorage`；`localhost` 与线上域名是两个独立来源，原有本地行程不会自动迁移。地图瓦片、地点搜索和路线仍依赖第三方公共服务，当前线上版本适合个人使用和评审，流量扩大前应换用有服务承诺的服务方。
 
